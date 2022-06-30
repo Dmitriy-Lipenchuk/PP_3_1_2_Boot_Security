@@ -1,7 +1,5 @@
 package ru.kata.spring.boot_security.demo.web.models;
 
-import org.springframework.security.core.GrantedAuthority;
-
 import javax.persistence.*;
 
 @Entity
@@ -11,7 +9,7 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    private String name;
+    private String role;
 
     public long getId() {
         return id;
@@ -21,11 +19,19 @@ public class Role {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getRole() {
+        return role;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setRole(String name) {
+        this.role = name;
+    }
+
+    public void setRoleId() {
+        if (role.equals("ROLE_ADMIN")) {
+            this.setId(1);
+        } else if (role.equals("ROLE_USER")) {
+            this.setId(2);
+        }
     }
 }
