@@ -1,14 +1,18 @@
 package ru.kata.spring.boot_security.demo.web.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import ru.kata.spring.boot_security.demo.web.models.Role;
 import ru.kata.spring.boot_security.demo.web.models.User;
 import ru.kata.spring.boot_security.demo.web.service.UserService;
 
 import javax.validation.Valid;
+import java.security.Principal;
+import java.util.Collections;
 
 @Controller
 @RequestMapping("/admin")
@@ -23,7 +27,12 @@ public class AdminUsersController {
 
 
     @GetMapping
-    public String getUsers(Model model) {
+    public String getUsers(Model model, Principal principal) {
+        User admin = userService.findByUsername(principal.getName());
+
+        model.addAttribute("admin", admin);
+        model.addAttribute("empty_user", new User());
+        model.addAttribute("empty_role", new Role());
         model.addAttribute("users", userService.getAllUsers());
 
         return "/users";
@@ -36,18 +45,17 @@ public class AdminUsersController {
         return "/single";
     }
 
-    @GetMapping("/create")
-    public String newUser(Model model) {
-        model.addAttribute("user", new User());
-
-        return "/create";
-    }
-
     @PostMapping()
-    public String createUser(@ModelAttribute("user") @Valid User user,
+    public String createUser(@ModelAttribute("user") @Valid User user, @ModelAttribute("empty_role") Role role,
                              BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return "/create";
+
+        user.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(12)));
+
+        if (role.getRole() != null) {
+            role.setRoleId();
+            user.setRoles(Collections.singletonList(role));
+        } else {
+            user.setRoles(Collections.emptyList());
         }
 
         userService.addUser(user);
@@ -55,18 +63,16 @@ public class AdminUsersController {
         return "redirect:/admin";
     }
 
-    @GetMapping("/edit/{id}")
-    public String edit(@PathVariable("id") long id, Model model) {
-        model.addAttribute("user", userService.getUser(id));
-
-        return "/edit";
-    }
-
     @PatchMapping()
-    public String update(@ModelAttribute("user") @Valid User user,
+    public String update(@ModelAttribute("user") @Valid User user, @ModelAttribute("empty_role") Role role,
                          BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return "/edit";
+        user.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(12)));
+
+        if (role.getRole() != null) {
+            role.setRoleId();
+            user.setRoles(Collections.singletonList(role));
+        } else {
+            user.setRoles(Collections.emptyList());
         }
 
         userService.updateUser(user);
